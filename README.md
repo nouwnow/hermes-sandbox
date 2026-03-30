@@ -32,6 +32,7 @@
 - [How the Filesystem Bridge Works](#how-the-filesystem-bridge-works)
 - [Hermes Setup Wizard](#hermes-setup-wizard)
 - [Skills & Memory](#skills--memory)
+- [Multi-Agent Setup](#multi-agent-setup)
 - [Discord & Gateway](#discord--gateway)
 - [Mission Control Dashboard](#mission-control-dashboard)
 - [Migrating from OpenClaw](#migrating-from-openclaw)
@@ -70,7 +71,7 @@ This project is a direct successor to [openclaw-sandbox](https://github.com/nouw
 | | OpenClaw | Hermes Agent |
 |---|---|---|
 | **Language** | Node.js | Python |
-| **Agent model** | Multi-agent executive team (COO/CTO/CMO/CRO) | Single powerful agent + delegation |
+| **Agent model** | Multi-agent executive team (COO/CTO/CMO/CRO) — each with own process, workspace, SOUL + MEMORY | Single agent (Muddy) + delegation via `delegate_task` — subagents get no automatic context |
 | **Memory** | Custom MEMORY.md + agent config files | Native memory system (state.db + SOUL.md) |
 | **Skills** | Custom via `skills_spawn` | Built-in skills marketplace (`hermes skills`) |
 | **Messaging** | Discord only | Discord, Telegram, Slack, WhatsApp, Matrix |
@@ -94,7 +95,7 @@ This project is a direct successor to [openclaw-sandbox](https://github.com/nouw
 
 **Advantages of OpenClaw (things you give up):**
 
-- **True multi-agent team** — OpenClaw's COO/CTO/CMO/CRO architecture with live Discord thread binding per sub-agent has no direct equivalent in Hermes (Hermes has delegation but no persistent named agents)
+- **Automatic agent context** — in OpenClaw, each agent (Elon/Gary/Warren) had its own process with its own workspace, SOUL, and MEMORY files loaded automatically at every session start. In Hermes, `delegate_task` spawns a subagent that starts with no identity unless you explicitly pass it as context. See [Multi-Agent Setup](#multi-agent-setup) for how to solve this.
 - **Per-agent workspaces** — each OpenClaw agent had an isolated workspace directory; Hermes uses a single shared workspace
 - **Node.js ecosystem** — if you relied on OpenClaw plugins or custom Node.js skills, they don't port directly
 
@@ -554,6 +555,50 @@ hermes sessions stats               # message counts, db size
 hermes --continue                   # resume last session
 hermes --resume <session_id>        # resume specific session
 ```
+
+<sub>[↑ Back to top](#table-of-contents)</sub>
+
+---
+
+## Multi-Agent Setup
+
+In OpenClaw, each agent (Elon, Gary, Warren) ran as its own process with its own workspace, SOUL file, and MEMORY — loaded automatically at every session. In Hermes there is **one active agent** (Muddy). When Muddy delegates to a subagent via `delegate_task`, that subagent starts with a blank slate unless identity context is explicitly passed in the prompt.
+
+This is the most important architectural difference to understand when migrating.
+
+### Two approaches
+
+**Option A — Identity skills (current setup)**
+
+Each team member gets a dedicated skill file containing their SOUL, working rules, memory, and domain knowledge. When Muddy delegates, the relevant identity skill travels with the task:
+
+```
+delegate_task(
+  goal="Draft a blog post about our spring offers",
+  context=[gary-identity, gary-content-insights]
+)
+```
+
+Gary now knows who he is, what the brand voice is, and that he never publishes without approval — because that's all in `gary-identity`. No extra infrastructure required.
+
+| Skill | Contents |
+|---|---|
+| `elon-identity` | CTO character, technical working rules, data paths, relevant skills |
+| `gary-identity` | CMO character, brand voice, tone of voice, WordPress rules |
+| `warren-identity` | CRO character, revenue streams, growth metrics, findings |
+
+Muddy's own memory records which identity skill to attach per delegation. This is the approach in use today.
+
+**Option B — Separate Hermes instances per agent**
+
+Elon, Gary, and Warren each run as a separate `hermes-agent` process with their own `stateDir`, Discord channel/thread, and gateway. Muddy coordinates by sending messages. This is closer to the OpenClaw model.
+
+Pros: each agent has a fully independent memory and can operate autonomously on their own channel.
+Cons: requires configuring multiple `systemd.services` entries in `flake.nix`, multiple gateway tokens, and separate Discord channels or threads per agent. Significantly more setup and resource use.
+
+### Recommendation
+
+Start with **Option A**. It works immediately with the current setup — no extra processes, no additional Discord bots, no extra virtiofs state dirs. Identity and rules travel with every delegation. If the team grows or you want Elon running autonomously on a dedicated channel, Option B is the natural next step once you know Hermes well enough to tune each instance.
 
 <sub>[↑ Back to top](#table-of-contents)</sub>
 
