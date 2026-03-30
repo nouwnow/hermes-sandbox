@@ -231,6 +231,8 @@ sudo ./setup-network.sh
 
 Then follow [Hermes Setup Wizard](#hermes-setup-wizard) inside the VM.
 
+> **Docs:** The `~/hermes-workspace/hermes-docs/` directory contains a local clone of the hermes-agent repository for the agent to reference. Pull it alongside every update to keep docs and code in sync.
+
 <sub>[↑ Back to top](#table-of-contents)</sub>
 
 ---
@@ -887,6 +889,14 @@ hermes --version
 Release notes staan altijd in de upstream repo:
 ```
 https://github.com/NousResearch/hermes-agent/blob/main/RELEASE_v<versie>.md
+```
+
+### Update lokale docs mee
+
+De `~/hermes-workspace/hermes-docs/` map is een lokale git clone van de hermes-agent repo die Hermes zelf kan raadplegen. Pull hem mee bij elke update zodat docs en code synchroon lopen:
+
+```bash
+cd ~/hermes-workspace/hermes-docs && git pull
 ```
 
 ### Alleen hermes updaten, niet nixpkgs
