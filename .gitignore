@@ -1,0 +1,10 @@
+result
+*.sock
+*.sock.pid
+notify.vsock
+control.sock
+supervisord.log
+supervisord.pid
+microvm-run.log
+virtiofsd-run.log
+nix-store-rw.img
