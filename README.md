@@ -39,6 +39,7 @@
 - [Configuration](#configuration)
 - [Persistent Network](#persistent-network)
 - [Project Structure](#project-structure)
+- [Updating Hermes Agent](#updating-hermes-agent)
 - [Lessons Learned](#lessons-learned)
 - [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
@@ -831,6 +832,69 @@ hermes-sandbox/
 ├── .npm-global/          — claude binary + npm packages
 ├── dashboard/            — Mission Control Next.js app
 └── content/              — agent output (articles, research, scripts)
+```
+
+<sub>[↑ Back to top](#table-of-contents)</sub>
+
+---
+
+## Updating Hermes Agent
+
+Hermes is installed via a Nix flake input — `hermes update` werkt niet. De update gaat via Nix.
+
+### Stap-voor-stap
+
+```bash
+# 1. Ga naar de sandbox directory op de host
+cd ~/hermes-sandbox
+
+# 2. Stop de VM graceful
+./backup.sh
+# of via control socket:
+curl -sf --unix-socket ~/hermes-sandbox/control.sock -X PUT http://localhost/vm.shutdown
+
+# 3. Verwijder socket files (blokkeren nix build)
+rm -f *.sock *.sock.pid
+
+# 4. Update de hermes-agent flake input
+nix flake update hermes-agent
+
+# 5. Rebuild de VM
+nix build
+
+# 6. Herstart
+./result/bin/virtiofsd-run   # terminal 1
+./result/bin/microvm-run     # terminal 2
+```
+
+### Na de herstart (in de VM)
+
+```bash
+# Check of er nieuwe verplichte config opties zijn
+hermes config check
+
+# Zijn er ontbrekende Required opties? Vul ze interactief in:
+hermes config migrate
+
+# Controleer de nieuwe versie
+hermes --version
+```
+
+> `hermes config migrate` is alleen nodig als `hermes config check` ontbrekende **Required** opties toont. Ontbrekende Optional opties (providers die je niet gebruikt) kun je negeren.
+
+### Wat er veranderd is bijhouden
+
+Release notes staan altijd in de upstream repo:
+```
+https://github.com/NousResearch/hermes-agent/blob/main/RELEASE_v<versie>.md
+```
+
+### Alleen hermes updaten, niet nixpkgs
+
+`nix flake update` zonder argument updatet **alle** inputs (inclusief nixpkgs). Dit kan onverwachte systeemwijzigingen meenemen. Gebruik altijd:
+
+```bash
+nix flake update hermes-agent   # alleen hermes, nixpkgs blijft op huidige versie
 ```
 
 <sub>[↑ Back to top](#table-of-contents)</sub>
