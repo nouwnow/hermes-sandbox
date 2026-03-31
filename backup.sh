@@ -23,7 +23,7 @@ echo ""
 # ─────────────────────────────────────────────────────────
 log "Stap 1/3 — VM afsluiten..."
 
-if pgrep -f "microvm@hermes-vm" > /dev/null 2>&1; then
+if pgrep -f "microvm@hermes-agent" > /dev/null 2>&1; then
     # Eerst services graceful stoppen voor data integriteit
     if [[ -S "$SANDBOX/control.sock" ]]; then
         log "  Services graceful stoppen..."
@@ -81,14 +81,14 @@ if pgrep -f "microvm@hermes-vm" > /dev/null 2>&1; then
 
     log "  Wachten op VM shutdown (max 30s)..."
     for i in $(seq 1 30); do
-        if ! pgrep -f "microvm@hermes-vm" > /dev/null 2>&1; then
+        if ! pgrep -f "microvm@hermes-agent" > /dev/null 2>&1; then
             log "  VM gestopt na ${i}s"
             break
         fi
         sleep 1
         if [[ $i -eq 30 ]]; then
             log "  VM shutdown timeout — force kill..."
-            pkill -f "microvm@hermes-vm" || true
+            pkill -f "microvm@hermes-agent" || true
             sleep 2
         fi
     done
