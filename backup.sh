@@ -101,7 +101,7 @@ fi
 # ─────────────────────────────────────────────────────────
 log "Stap 2/3 — virtiofsd stoppen..."
 
-pkill -9 -f "virtiofsd.*hermes" 2>/dev/null || true
+pkill -9 -f "hermes-agent-virtiofsd-supervisord" 2>/dev/null || true
 sleep 2
 
 # Clean up socket en PID bestanden
